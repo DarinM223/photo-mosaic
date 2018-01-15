@@ -7,9 +7,12 @@ module AvgColor
     , avgColorOfFile
     ) where
 
-import Control.Monad.State (StateT, get, modify)
+import Control.Monad.State (StateT, get, modify, runStateT)
 import Data.List (foldl')
-import Codec.Picture (Image, readImage, convertRGB8, Pixel, PixelRGB8 (..), pixelAt)
+import Codec.Picture (Image (..), readImage, convertRGB8, Pixel, PixelRGB8 (..), pixelAt)
+
+class (Monad m) => IteratorM p m where
+    next :: (p -> a) -> m (Maybe a)
 
 data ImageIterator p = ImageIterator
     { imageMaxWidth  :: Int
@@ -18,11 +21,31 @@ data ImageIterator p = ImageIterator
     , image          :: Image p
     }
 
-class (Monad m) => IteratorM p m where
-    next :: (p -> a) -> m (Maybe a)
+createImageIter :: Image p -> ImageIterator p
+createImageIter image =
+    ImageIterator (imageWidth image) (imageHeight image) (0, 0) image
+
+getPixel :: (Pixel p) => ImageIterator p -> p
+getPixel iter = pixelAt (image iter) x y
+  where
+    x = fst . imageCurrPos $ iter
+    y = snd . imageCurrPos $ iter
+
+atEnd :: ImageIterator p -> Bool
+atEnd i@(ImageIterator { imageCurrPos = (x, y) })
+    | x >= imageMaxWidth i || y >= imageMaxHeight i = True
+    | otherwise                                     = False
+
+updateIter :: ImageIterator p -> ImageIterator p
+updateIter i@(ImageIterator { imageCurrPos = (x, y) })
+    | x == imageMaxWidth i = i { imageCurrPos = (0, y + 1) }
+    | otherwise            = i { imageCurrPos = (x + 1, y) }
 
 newtype IteratorT p m a = IteratorT { fromIteratorT :: StateT (ImageIterator p) m a }
     deriving (Functor, Applicative, Monad)
+
+runIteratorT :: IteratorT p m a -> ImageIterator p -> m (a, ImageIterator p)
+runIteratorT = runStateT . fromIteratorT
 
 instance (Functor m, Monad m, Pixel p) => IteratorM p (IteratorT p m) where
     next convert = IteratorT $ do
@@ -33,20 +56,6 @@ instance (Functor m, Monad m, Pixel p) => IteratorM p (IteratorT p m) where
                 pixel <- getPixel <$> get
                 modify updateIter
                 return $ Just $ convert pixel
-
-getPixel :: (Pixel p) => ImageIterator p -> p
-getPixel iter = pixelAt (image iter) x y
-  where
-    x = fst . imageCurrPos $ iter
-    y = snd . imageCurrPos $ iter
-
-atEnd :: ImageIterator p -> Bool
-atEnd i
-    | imageCurrPos i == (imageMaxWidth i, imageMaxHeight i) = True
-    | otherwise                                             = False
-
-updateIter :: ImageIterator p -> ImageIterator p
-updateIter iter = iter
 
 -- | Calculate the average color from a stream of RGB values.
 avgColor :: (IteratorM p m, Monad m)
@@ -79,4 +88,13 @@ avgColorOfFile :: String -> IO (Int, Int, Int)
 avgColorOfFile path = do
     Right dyn <- readImage path
     let image = convertRGB8 dyn
-    return (1, 1, 1)
+        iter  = createImageIter image
+    (avg, _) <- runIteratorT (avgColor convertPixel) iter
+    return avg
+
+convertPixel :: PixelRGB8 -> (Int, Int, Int)
+convertPixel (PixelRGB8 r g b) = (r', g', b')
+  where
+    r' = fromIntegral r :: Int
+    g' = fromIntegral g :: Int
+    b' = fromIntegral b :: Int
