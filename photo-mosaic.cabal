@@ -39,6 +39,7 @@ library
   exposed-modules:
       AvgColor
       AvgColorTask
+      KDTree
       Lib
   other-modules:
       Paths_photo_mosaic

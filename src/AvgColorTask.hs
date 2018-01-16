@@ -10,11 +10,6 @@ import Data.Traversable (forM)
 import Data.Maybe (catMaybes)
 import System.Directory (getDirectoryContents)
 
-data CalcResult = CalcResult
-    { filename :: String
-    , avg      :: (Int, Int, Int)
-    } deriving (Show)
-
 imageExtensions :: [String]
 imageExtensions =
     [ "jpg"
@@ -27,15 +22,15 @@ calcInDirectory :: String -> String -> IO ()
 calcInDirectory path indexPath = do
     files <- getDirectoryContents path
     let imageFiles = fmap appendPath . filter keepImgs $ files
-    mapM_ (\f -> async $ getAvgColor f indexPath) imageFiles
+    mapM_ (\f -> async $ writeAvgColor f indexPath) imageFiles
   where
     appendPath f = path ++ "/" ++ f
     keepImgs = checkFilename . splitOn "."
     checkFilename words = foldl' (hasImageFilename words) False imageExtensions
     hasImageFilename words isImage ext = isImage || ext `elem` words
 
-getAvgColor :: String -> String -> IO ()
-getAvgColor filename indexPath = do
+writeAvgColor :: String -> String -> IO ()
+writeAvgColor filename indexPath = do
     avgColor <- avgColorOfFile filename
     case avgColor of
         Right color -> writeAvgToFile filename color indexPath
