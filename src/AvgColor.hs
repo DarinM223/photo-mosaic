@@ -59,22 +59,19 @@ instance (Functor m, Monad m, Pixel p) => IteratorM p (IteratorT p m) where
 
 -- | Calculate the average color from a stream of RGB values.
 avgColor :: (IteratorM p m, Monad m)
-         => (p -> (Int, Int, Int))
+         => (p -> (Double, Double, Double))
          -> m (Int, Int, Int)
 avgColor convert = avgColorRec convert ((0.0, 0.0, 0.0), 0.0)
 
 avgColorRec :: (IteratorM p m, Monad m)
-            => (p -> (Int, Int, Int))
+            => (p -> (Double, Double, Double))
             -> ((Double, Double, Double), Double)
             -> m (Int, Int, Int)
 avgColorRec convert ((sumR, sumG, sumB), num) = do
     result <- next convert
     case result of
         Just (r, g, b) ->
-            let r'     = sumR + fromIntegral r
-                g'     = sumG + fromIntegral g
-                b'     = sumB + fromIntegral b
-                state' = ((r', g', b'), num + 1)
+            let state' = ((sumR + r, sumG + g, sumB + b), num + 1)
             in avgColorRec convert state'
         Nothing ->
             let r'  = round $ sumR / num :: Int
@@ -95,9 +92,9 @@ avgColorOfFile path = do
             (avg, _) <- runIteratorT (avgColor convertPixel) iter
             return $ Right avg
 
-convertPixel :: PixelRGB8 -> (Int, Int, Int)
+convertPixel :: PixelRGB8 -> (Double, Double, Double)
 convertPixel (PixelRGB8 r g b) = (r', g', b')
   where
-    r' = fromIntegral r :: Int
-    g' = fromIntegral g :: Int
-    b' = fromIntegral b :: Int
+    r' = fromIntegral r :: Double
+    g' = fromIntegral g :: Double
+    b' = fromIntegral b :: Double
