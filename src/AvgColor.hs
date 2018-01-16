@@ -71,26 +71,29 @@ avgColorRec convert ((sumR, sumG, sumB), num) = do
     result <- next convert
     case result of
         Just (r, g, b) ->
-            let r' = sumR + fromIntegral r
-                g' = sumG + fromIntegral g
-                b' = sumB + fromIntegral b
+            let r'     = sumR + fromIntegral r
+                g'     = sumG + fromIntegral g
+                b'     = sumB + fromIntegral b
                 state' = ((r', g', b'), num + 1)
             in avgColorRec convert state'
         Nothing ->
-            let r' = round $ sumR / num :: Int
-                g' = round $ sumG / num :: Int
-                b' = round $ sumB / num :: Int
+            let r'  = round $ sumR / num :: Int
+                g'  = round $ sumG / num :: Int
+                b'  = round $ sumB / num :: Int
                 avg = (r', g', b')
             in return avg
 
 -- | Read an image file and calculate the average color.
-avgColorOfFile :: String -> IO (Int, Int, Int)
+avgColorOfFile :: String -> IO (Either String (Int, Int, Int))
 avgColorOfFile path = do
-    Right dyn <- readImage path
-    let image = convertRGB8 dyn
-        iter  = createImageIter image
-    (avg, _) <- runIteratorT (avgColor convertPixel) iter
-    return avg
+    dynMaybe <- readImage path
+    case dynMaybe of
+        Left err -> return $ Left err
+        Right dyn -> do
+            let image = convertRGB8 dyn
+                iter  = createImageIter image
+            (avg, _) <- runIteratorT (avgColor convertPixel) iter
+            return $ Right avg
 
 convertPixel :: PixelRGB8 -> (Int, Int, Int)
 convertPixel (PixelRGB8 r g b) = (r', g', b')
