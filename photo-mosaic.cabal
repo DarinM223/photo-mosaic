@@ -41,6 +41,7 @@ library
       AvgColorTask
       KDTree
       Lib
+      Iterator
   other-modules:
       Paths_photo_mosaic
   default-language: Haskell2010

@@ -6,18 +6,19 @@ module KDTree
     , Tree (..)
     ) where
 
+import Data.List (foldl')
+
 class Dimensional d where
     atDim :: Int -> d -> Int
 
 data Tree a = Empty | Node a (Tree a) (Tree a) deriving (Show, Eq)
 
-data Rectangle = Rectangle
-    { topLeft :: (Int, Int)
-    , bottomRight :: (Int, Int)
-    } deriving (Show, Eq)
-
 numDims :: Int
 numDims = 3
+
+bulkInsert :: (Dimensional a, Eq a) => [a] -> Tree a -> Tree a
+-- TODO(DarinM223): make tree more balanced with sorted list
+bulkInsert elems tree = foldl' (flip insert) tree elems
 
 insert :: (Dimensional a, Eq a) => a -> Tree a -> Tree a
 insert = insertInTree 0
