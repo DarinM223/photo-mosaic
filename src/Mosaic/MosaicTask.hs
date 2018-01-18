@@ -3,7 +3,11 @@ module Mosaic.MosaicTask
     ) where
 
 import Control.Monad (forM_)
+import Control.Monad.Identity (runIdentity)
+import Data.Maybe (catMaybes)
+import Debug.Trace (trace)
 import Mosaic.KDTree (bulkInitTree, Dimensional (..))
+import Mosaic.Parser (parseInt, parseSpaces, parseQuotes, runParser, Parser)
 
 data CalcResult = CalcResult
     { filename :: String
@@ -21,5 +25,20 @@ instance Dimensional CalcResult where
 loadFromFile :: String -> IO [CalcResult]
 loadFromFile path = do
     content <- readFile path
-    forM_ (lines content) $ \l -> putStrLn l
-    return []
+    return $ catMaybes $ parseLine <$> lines content
+
+parseLine :: String -> Maybe CalcResult
+parseLine = convertMaybe . runIdentity . runParser go
+  where
+    convertMaybe (Left err) = trace (show err) Nothing
+    convertMaybe (Right (result, _)) = Just result
+    go = do
+        parseSpaces
+        s <- parseQuotes '\"'
+        parseSpaces
+        r <- parseInt
+        parseSpaces
+        g <- parseInt
+        parseSpaces
+        b <- parseInt
+        return $ CalcResult s (r, g, b)

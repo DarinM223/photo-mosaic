@@ -43,6 +43,7 @@ library
       Mosaic.Iterator
       Mosaic.KDTree
       Mosaic.MosaicTask
+      Mosaic.Parser
   other-modules:
       Paths_photo_mosaic
   default-language: Haskell2010
