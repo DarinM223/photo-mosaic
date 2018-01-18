@@ -1,10 +1,10 @@
-module AvgColor
+module Mosaic.AvgColor
     ( avgColor
     , avgColorOfFile
     ) where
 
 import Codec.Picture (readImage, convertRGB8, PixelRGB8 (..))
-import Iterator (IteratorM (next), createImageIter, runIteratorT)
+import Mosaic.Iterator (IteratorM (next), createImageIter, runIteratorT)
 
 -- | Calculate the average color from a stream of RGB values.
 avgColor :: (IteratorM p m, Monad m)

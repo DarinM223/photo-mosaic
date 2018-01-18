@@ -1,13 +1,13 @@
-module AvgColorTask
+module Mosaic.AvgColorTask
     ( calcInDirectory
     ) where
 
-import AvgColor (avgColorOfFile)
 import Control.Concurrent.Async (async)
 import Data.List (foldl')
 import Data.List.Split (splitOn)
 import Data.Traversable (forM)
 import Data.Maybe (catMaybes)
+import Mosaic.AvgColor (avgColorOfFile)
 import System.Directory (getDirectoryContents)
 
 imageExtensions :: [String]

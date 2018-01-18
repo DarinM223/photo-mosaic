@@ -2,7 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Iterator
+module Mosaic.Iterator
     ( createImageIter
     , runIteratorT
     , ImageIterator

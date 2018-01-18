@@ -1,16 +1,18 @@
-module KDTree
+module Mosaic.KDTree
     ( bulkInitTree
     , insert
     , nearestNeighbor
     , numDims
-    , Dimensional
+    , Dimensional (..)
     , Tree (..)
     ) where
 
-import Data.List (foldl', sort)
+import Data.List (foldl', sortBy)
 
-class (Eq d, Ord d) => Dimensional d where
+class (Eq d) => Dimensional d where
+    -- | Returns the value at the given axis (starting at 0).
     atDim :: Int -> d -> Int
+    -- | Returns the squared distance between two Dimensionals.
     dist  :: d -> d -> Int
 
 data Tree a = Empty | Node a (Tree a) (Tree a) deriving (Show, Eq)
@@ -28,7 +30,8 @@ bulkInitDim dim l =
     Node mid (bulkInitDim (incDim dim) left) (bulkInitDim (incDim dim) right)
   where
     (left, mid:right) = splitAt midIdx sortedList
-    sortedList = sort l
+    sortedList = sortBy (compareDim dim) l
+    compareDim dim a b = atDim dim a `compare` atDim dim b
     midIdx = length l `div` 2
 
 insert :: (Dimensional a) => a -> Tree a -> Tree a

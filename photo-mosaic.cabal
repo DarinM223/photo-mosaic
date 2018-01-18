@@ -37,11 +37,12 @@ library
     , stm
     , async
   exposed-modules:
-      AvgColor
-      AvgColorTask
-      KDTree
-      Lib
-      Iterator
+      Mosaic
+      Mosaic.AvgColor
+      Mosaic.AvgColorTask
+      Mosaic.Iterator
+      Mosaic.KDTree
+      Mosaic.MosaicTask
   other-modules:
       Paths_photo_mosaic
   default-language: Haskell2010
