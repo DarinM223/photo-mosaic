@@ -1,14 +1,15 @@
 module KDTree
-    ( insert
+    ( bulkInitTree
+    , insert
     , nearestNeighbor
     , numDims
     , Dimensional
     , Tree (..)
     ) where
 
-import Data.List (foldl')
+import Data.List (foldl', sort)
 
-class Dimensional d where
+class (Eq d, Ord d) => Dimensional d where
     atDim :: Int -> d -> Int
     dist  :: d -> d -> Int
 
@@ -17,17 +18,26 @@ data Tree a = Empty | Node a (Tree a) (Tree a) deriving (Show, Eq)
 numDims :: Int
 numDims = 3
 
-bulkInsert :: (Dimensional a, Eq a) => [a] -> Tree a -> Tree a
--- TODO(DarinM223): make tree more balanced with sorted list
-bulkInsert elems tree = foldl' (flip insert) tree elems
+bulkInitTree :: (Dimensional a) => [a] -> Tree a
+bulkInitTree = bulkInitDim 0
 
-insert :: (Dimensional a, Eq a) => a -> Tree a -> Tree a
+bulkInitDim :: (Dimensional a) => Int -> [a] -> Tree a
+bulkInitDim dim [e] = Node e Empty Empty
+bulkInitDim dim [] = Empty
+bulkInitDim dim l =
+    Node mid (bulkInitDim (incDim dim) left) (bulkInitDim (incDim dim) right)
+  where
+    (left, mid:right) = splitAt midIdx sortedList
+    sortedList = sort l
+    midIdx = length l `div` 2
+
+insert :: (Dimensional a) => a -> Tree a -> Tree a
 insert = insertInTree 0
 
 incDim :: Int -> Int
 incDim dim = dim + 1 `rem` numDims
 
-insertInTree :: (Dimensional a, Eq a) => Int -> a -> Tree a -> Tree a
+insertInTree :: (Dimensional a) => Int -> a -> Tree a -> Tree a
 insertInTree _ e Empty = Node e Empty Empty
 insertInTree dim e (Node elem left right)
     | e == elem = Node elem left right
@@ -36,10 +46,10 @@ insertInTree dim e (Node elem left right)
     | otherwise =
         Node elem left (insertInTree (incDim dim) e right)
 
-nearestNeighbor :: (Dimensional a, Eq a) => a -> Tree a -> Maybe a
+nearestNeighbor :: (Dimensional a) => a -> Tree a -> Maybe a
 nearestNeighbor = nearestNeighborInTree 0
 
-nearestNeighborInTree :: (Dimensional a, Eq a) => Int -> a -> Tree a -> Maybe a
+nearestNeighborInTree :: (Dimensional a) => Int -> a -> Tree a -> Maybe a
 nearestNeighborInTree _ _ Empty = Nothing
 nearestNeighborInTree _ _ (Node e Empty Empty) = Just e
 nearestNeighborInTree dim searchP (Node currP left right)
