@@ -5,9 +5,8 @@ module Mosaic.MosaicTask
 import Control.Monad (forM_)
 import Control.Monad.Identity (runIdentity)
 import Data.Maybe (catMaybes)
-import Debug.Trace (trace)
 import Mosaic.KDTree (bulkInitTree, Dimensional (..))
-import Mosaic.Parser (parseInt, parseSpaces, parseQuotes, runParser, Parser)
+import Mosaic.Parser (parseInt, parseSpaces, parseQuotes, runParser)
 
 data CalcResult = CalcResult
     { filename :: String
@@ -28,10 +27,10 @@ loadFromFile path = do
     return $ catMaybes $ parseLine <$> lines content
 
 parseLine :: String -> Maybe CalcResult
-parseLine = convertMaybe . runIdentity . runParser go
+parseLine = convertToMaybe . runIdentity . runParser go
   where
-    convertMaybe (Left err) = trace (show err) Nothing
-    convertMaybe (Right (result, _)) = Just result
+    convertToMaybe (Left err) = Nothing
+    convertToMaybe (Right (result, _)) = Just result
     go = do
         parseSpaces
         s <- parseQuotes '\"'
