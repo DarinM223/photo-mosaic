@@ -6,7 +6,7 @@ module Mosaic.Iterator
     ( createImageIter
     , createRangeIter
     , runIteratorT
-    , ImageIterator
+    , ImageIterator (..)
     , IteratorM (..)
     , IteratorT
     ) where
@@ -26,6 +26,15 @@ data ImageIterator p = ImageIterator
     , imageStartPos  :: (Int, Int)
     , image          :: Image p
     }
+
+instance Show (ImageIterator p) where
+    show i = "Max width: " ++ show w ++ " Max height: " ++ show h ++
+        " Image position: " ++ show pos ++ " Image start position: " ++ show start
+      where
+        w = imageMaxWidth i
+        h = imageMaxHeight i
+        pos = imageCurrPos i
+        start = imageStartPos i
 
 createImageIter :: Image p -> ImageIterator p
 createImageIter image =

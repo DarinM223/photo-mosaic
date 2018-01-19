@@ -3,7 +3,13 @@ module Mosaic.AvgColorTask
     ) where
 
 import Control.Concurrent (forkIO)
-import Control.Concurrent.STM (atomically, newTQueue, readTQueue, writeTQueue, TQueue)
+import Control.Concurrent.STM
+    ( atomically
+    , newTQueue
+    , readTQueue
+    , writeTQueue
+    , TQueue
+    )
 import Control.Monad (forever)
 import Data.Foldable (forM_)
 import Data.List (foldl')
@@ -39,7 +45,7 @@ calcInDirectory path indexPath = do
             Just result -> do
                 putStrLn $ show (filename result) ++ " finished"
                 writeResultToFile result indexPath
-            Nothing     -> return ()
+            Nothing -> return ()
   where
     appendPath f = path ++ "/" ++ f
     keepImgs = checkFilename . splitOn "."

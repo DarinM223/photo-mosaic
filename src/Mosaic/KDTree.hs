@@ -38,7 +38,7 @@ insert :: (Dimensional a) => a -> Tree a -> Tree a
 insert = insertInTree 0
 
 incDim :: Int -> Int
-incDim dim = dim + 1 `rem` numDims
+incDim dim = (dim + 1) `rem` numDims
 
 insertInTree :: (Dimensional a) => Int -> a -> Tree a -> Tree a
 insertInTree _ e Empty = Node e Empty Empty

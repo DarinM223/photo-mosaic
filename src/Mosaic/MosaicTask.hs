@@ -1,16 +1,27 @@
 module Mosaic.MosaicTask
     ( calcMosaic
+    , breakRegions
     , CalcResult (..)
     , ImageResult (..)
     ) where
 
 import Codec.Picture (readImage, convertRGB8, Image (..), PixelRGB8 (..))
+import Control.Concurrent.Async (async)
+import Control.Concurrent.STM
+    ( atomically
+    , newTQueue
+    , readTQueue
+    , writeTQueue
+    , TQueue
+    )
 import Control.Monad (forM_)
 import Control.Monad.Identity (runIdentity)
 import Data.Maybe (catMaybes)
-import Mosaic.KDTree (bulkInitTree, Dimensional (..))
-import Mosaic.Iterator (createRangeIter, ImageIterator)
+import Mosaic.KDTree (bulkInitTree, nearestNeighbor, Dimensional (..), Tree (..))
+import Mosaic.Iterator (createRangeIter, runIteratorT, ImageIterator (imageStartPos))
 import Mosaic.Parser (parseInt, parseSpaces, parseQuotes, runParser)
+
+import qualified Mosaic.AvgColor as Avg
 
 data CalcResult = CalcResult
     { filename :: String
@@ -35,7 +46,7 @@ loadFromFile path = do
     content <- readFile path
     return $ catMaybes $ parseLine <$> lines content
 
-breakRegions :: Int -> Int -> Int -> Int -> Image p -> [ImageIterator p]
+breakRegions :: Int -> Int -> Int -> Int -> Image PixelRGB8 -> [ImageIterator PixelRGB8]
 breakRegions w h iw ih i = go (0, 0) []
   where
     go (x, y) build
@@ -52,18 +63,29 @@ calcMosaic indexPath imagePath numRows numCols = do
     case dynMaybe of
         Left err -> return $ Left err
         Right dyn -> do
-            results <- processImage numRows numCols $ convertRGB8 dyn
+            results <- processImage tree numRows numCols $ convertRGB8 dyn
             return $ Right results
 
-processImage :: Int -> Int -> Image p -> IO [ImageResult]
-processImage numRows numCols i =
-    -- TODO(DarinM223): for every region, create new thread and
-    -- pass image iterator and tree into it.
+processImage :: Tree CalcResult -> Int -> Int -> Image PixelRGB8 -> IO [ImageResult]
+processImage tree numRows numCols i = do
+    q <- atomically newTQueue
+    forM_ regions $ \iter -> async $ processRegion q iter tree
+    forM_ regions $ \_ -> do
+        imageResult <- atomically $ readTQueue q
+        print imageResult
     return []
   where
     w = imageWidth i `div` numCols
     h = imageHeight i `div` numRows
     regions = breakRegions w h (imageWidth i) (imageHeight i) i
+
+processRegion :: TQueue (Maybe ImageResult) -> ImageIterator PixelRGB8 -> Tree CalcResult -> IO ()
+processRegion q iter tree = do
+    avg <- runIteratorT (Avg.avgColor Avg.convertPixel) iter
+    let avgCalcRes  = CalcResult "" avg
+        nearest     = nearestNeighbor avgCalcRes tree
+        imageResult = (\r -> ImagePiece (filename r) (imageStartPos iter)) <$> nearest
+    atomically $ writeTQueue q imageResult
 
 parseLine :: String -> Maybe CalcResult
 parseLine = convertToMaybe . runIdentity . runParser go

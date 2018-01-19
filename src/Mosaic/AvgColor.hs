@@ -1,6 +1,7 @@
 module Mosaic.AvgColor
     ( avgColor
     , avgColorOfFile
+    , convertPixel
     ) where
 
 import Codec.Picture (readImage, convertRGB8, PixelRGB8 (..))
