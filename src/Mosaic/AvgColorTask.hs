@@ -43,7 +43,7 @@ calcInDirectory path indexPath = do
         result <- atomically $ readTQueue outQ
         case result of
             Just result -> do
-                putStrLn $ show (filename result) ++ " finished"
+                putStrLn $ show (resultFilename result) ++ " finished"
                 writeResultToFile result indexPath
             Nothing -> return ()
   where

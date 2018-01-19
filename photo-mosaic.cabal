@@ -41,6 +41,7 @@ library
       Mosaic
       Mosaic.AvgColor
       Mosaic.AvgColorTask
+      Mosaic.HTMLOutput
       Mosaic.Iterator
       Mosaic.KDTree
       Mosaic.MosaicTask
