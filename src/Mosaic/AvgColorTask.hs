@@ -2,8 +2,7 @@ module Mosaic.AvgColorTask
     ( calcInDirectory
     ) where
 
-import Control.Concurrent.Async (async)
-import Control.Concurrent (forkIO, newMVar, withMVar, MVar)
+import Control.Concurrent (forkIO)
 import Control.Concurrent.STM (atomically, newTQueue, readTQueue, writeTQueue, TQueue)
 import Control.Monad (forever)
 import Data.Foldable (forM_)
@@ -31,14 +30,15 @@ calcInDirectory path indexPath = do
 
     inQ <- atomically newTQueue
     outQ <- atomically newTQueue
-    lock <- newMVar ()
 
     forM_ imageFiles $ \f -> atomically $ writeTQueue inQ f
-    forM_ [1..numCores] $ \w -> forkIO $ worker w inQ outQ lock
+    forM_ [1..numCores * 2] $ \w -> forkIO $ worker w inQ outQ
     forM_ imageFiles $ \_ -> do
         result <- atomically $ readTQueue outQ
         case result of
-            Just result -> writeResultToFile result indexPath
+            Just result -> do
+                putStrLn $ show (filename result) ++ " finished"
+                writeResultToFile result indexPath
             Nothing     -> return ()
   where
     appendPath f = path ++ "/" ++ f
@@ -46,10 +46,9 @@ calcInDirectory path indexPath = do
     checkFilename words = foldl' (hasImageFilename words) False imageExtensions
     hasImageFilename words isImage ext = isImage || ext `elem` words
 
-worker :: Int -> TQueue String -> TQueue (Maybe CalcResult) -> MVar () -> IO ()
-worker n inQ outQ lock = forever $ do
+worker :: Int -> TQueue String -> TQueue (Maybe CalcResult) -> IO ()
+worker n inQ outQ = forever $ do
     filename <- atomically $ readTQueue inQ
-    withMVar lock $ \_ -> putStrLn $ "Worker " ++ show n ++ " processing filename: " ++ show filename
     avgColor <- avgColorOfFile filename
     case avgColor of
         Right color -> atomically $ writeTQueue outQ $ Just $ CalcResult filename color

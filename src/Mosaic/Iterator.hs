@@ -11,9 +11,10 @@ module Mosaic.Iterator
     , IteratorT
     ) where
 
-import Control.Monad.State (StateT, get, modify, runStateT)
+import Control.Monad.Reader (liftIO, MonadIO, ReaderT, ask, runReaderT)
 import Codec.Picture (Image (..), Pixel, pixelAt)
 import Data.List (foldl')
+import Data.IORef (IORef, newIORef, readIORef, modifyIORef')
 
 class (Monad m) => IteratorM p m where
     next :: (p -> a) -> m (Maybe a)
@@ -33,21 +34,28 @@ createImageIter image =
 createRangeIter :: Int -> Int -> (Int, Int) -> Image p -> ImageIterator p
 createRangeIter w h = ImageIterator w h (0, 0)
 
-newtype IteratorT p m a = IteratorT { fromIteratorT :: StateT (ImageIterator p) m a }
-    deriving (Functor, Applicative, Monad)
+newtype IteratorT p m a = IteratorT { fromIteratorT :: ReaderT (IORef (ImageIterator p)) m a }
+    deriving (Functor, Applicative, Monad, MonadIO)
 
-runIteratorT :: IteratorT p m a -> ImageIterator p -> m (a, ImageIterator p)
-runIteratorT = runStateT . fromIteratorT
+runIteratorT :: (MonadIO m) => IteratorT p m a -> ImageIterator p -> m a
+runIteratorT iter imageIter = do
+    imageIterRef <- liftIO $ newIORef imageIter
+    runReaderT (fromIteratorT iter) imageIterRef
 
-instance (Functor m, Monad m, Pixel p) => IteratorM p (IteratorT p m) where
+instance (Functor m, MonadIO m, Pixel p) => IteratorM p (IteratorT p m) where
     next convert = IteratorT $ do
-        iter <- get
-        if atEnd iter
-            then return Nothing
-            else do
-                pixel <- getPixel <$> get
-                modify updateIter
-                return $ Just $ convert pixel
+        iterRef <- ask
+        liftIO $ doNext convert iterRef
+
+doNext :: (Pixel p) => (p -> a) -> IORef (ImageIterator p) -> IO (Maybe a)
+doNext convert iterRef = do
+    iter <- readIORef iterRef
+    if atEnd iter
+        then return Nothing
+        else do
+            let pixel = getPixel iter
+            modifyIORef' iterRef updateIter
+            return $ Just $ convert pixel
 
 getPixel :: (Pixel p) => ImageIterator p -> p
 getPixel iter = pixelAt (image iter) x y

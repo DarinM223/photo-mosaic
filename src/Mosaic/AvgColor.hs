@@ -38,7 +38,7 @@ avgColorOfFile path = do
         Right dyn -> do
             let image = convertRGB8 dyn
                 iter  = createImageIter image
-            (avg, _) <- runIteratorT (avgColor convertPixel) iter
+            avg <- runIteratorT (avgColor convertPixel) iter
             return $ Right avg
 
 convertPixel :: PixelRGB8 -> (Double, Double, Double)
