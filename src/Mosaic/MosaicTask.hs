@@ -83,9 +83,9 @@ breakRegions :: Int
 breakRegions w h iw ih i = go (0, 0) []
   where
     go (x, y) build
-        | x + w >= iw && y + h >= ih = reverse build
-        | x + w >= iw                = go (0, y + h) $ newIter (x, y):build
-        | otherwise                  = go (x + w, y) $ newIter (x, y):build
+        | y + h >= ih = reverse build
+        | x + w >= iw = go (0, y + h) build
+        | otherwise   = go (x + w, y) $ newIter (x, y):build
     newIter p = createRangeIter w h p i
 
 processRegion :: Int
