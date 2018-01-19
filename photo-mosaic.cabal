@@ -36,6 +36,7 @@ library
     , split
     , stm
     , async
+    , vector
   exposed-modules:
       Mosaic
       Mosaic.AvgColor
