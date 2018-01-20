@@ -4,7 +4,12 @@ module Mosaic.MosaicTask
     , ImageResult (..)
     ) where
 
-import Codec.Picture (readImage, convertRGB8, Image (..), PixelRGB8 (..))
+import Codec.Picture
+    ( readImage
+    , convertRGB8
+    , Image (imageWidth, imageHeight)
+    , PixelRGB8
+    )
 import Control.Concurrent.Async (async)
 import Control.Concurrent.STM
     ( atomically
@@ -20,7 +25,12 @@ import Data.Maybe (catMaybes)
 import Data.Traversable (forM)
 import Data.Vector ((//))
 import Mosaic.AvgColor (avgColor, convertPixel, pixelRange)
-import Mosaic.KDTree (bulkInitTree, nearestNeighbor, Dimensional (..), Tree)
+import Mosaic.KDTree
+    ( bulkInitTree
+    , nearestNeighbor
+    , Dimensional (atDim, dist)
+    , Tree
+    )
 import Mosaic.Parser (parseInt, parseSpaces, parseQuotes, runParser)
 
 import qualified Data.Vector as V

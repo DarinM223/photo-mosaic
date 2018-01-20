@@ -2,7 +2,7 @@ module Mosaic.HTMLOutput
     ( generateOutput
     ) where
 
-import Mosaic.MosaicTask (ImageResult (..))
+import Mosaic.MosaicTask (ImageResult (ImageResult))
 
 htmlImg :: Maybe String -> Int -> Int -> String
 htmlImg (Just filename) w h = "<img src=\"" ++ filename ++

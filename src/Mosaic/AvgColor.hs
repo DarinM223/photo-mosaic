@@ -10,8 +10,8 @@ import Codec.Picture
     , convertRGB8
     , pixelAt
     , Pixel
-    , Image (..)
-    , PixelRGB8 (..)
+    , Image (imageWidth, imageHeight)
+    , PixelRGB8 (PixelRGB8)
     )
 import Data.List (foldl')
 

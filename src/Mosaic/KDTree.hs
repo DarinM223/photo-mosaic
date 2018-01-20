@@ -7,7 +7,7 @@ module Mosaic.KDTree
     , Tree (..)
     ) where
 
-import Data.List (foldl', sortBy)
+import Data.List (sortBy)
 
 class (Eq d) => Dimensional d where
     -- | Returns the value at the given axis (starting at 0).

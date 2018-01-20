@@ -15,7 +15,6 @@ import Control.Monad.State
     , StateT
     , get
     , put
-    , modify
     , runStateT
     )
 import Control.Monad.Except
