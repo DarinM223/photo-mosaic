@@ -2,45 +2,49 @@ module Mosaic.AvgColor
     ( avgColor
     , avgColorOfFile
     , convertPixel
+    , pixelRange
     ) where
 
-import Codec.Picture (readImage, convertRGB8, PixelRGB8 (..))
-import Mosaic.Iterator (IteratorM (next), createImageIter, runIteratorT)
+import Codec.Picture
+    ( readImage
+    , convertRGB8
+    , pixelAt
+    , Pixel
+    , Image (..)
+    , PixelRGB8 (..)
+    )
+import Data.List (foldl')
 
 -- | Calculate the average color from a stream of RGB values.
-avgColor :: (IteratorM p m, Monad m)
-         => (p -> (Double, Double, Double))
-         -> m (Int, Int, Int)
-avgColor convert = avgColorRec convert ((0.0, 0.0, 0.0), 0.0)
-
-avgColorRec :: (IteratorM p m, Monad m)
-            => (p -> (Double, Double, Double))
-            -> ((Double, Double, Double), Double)
-            -> m (Int, Int, Int)
-avgColorRec convert ((sumR, sumG, sumB), num) = do
-    result <- next convert
-    case result of
-        Just (r, g, b) ->
-            let state' = ((sumR + r, sumG + g, sumB + b), num + 1)
-            in avgColorRec convert state'
-        Nothing ->
-            let r'  = round $ sumR / num :: Int
-                g'  = round $ sumG / num :: Int
-                b'  = round $ sumB / num :: Int
-                avg = (r', g', b')
-            in return avg
+avgColor :: (Pixel p)
+         => Image p
+         -> (p -> (Double, Double, Double))
+         -> [(Int, Int)]
+         -> (Int, Int, Int)
+avgColor img convert = calcAvg . foldl' incAvg ((0.0, 0.0, 0.0), 0.0)
+  where
+    calcAvg ((r, g, b), num) = (r', g', b')
+      where
+        r' = round $ r / num :: Int
+        g' = round $ g / num :: Int
+        b' = round $ b / num :: Int
+    incAvg ((sumR, sumG, sumB), num) (i, j) =
+        ((sumR + r, sumG + g, sumB + b), num + 1)
+      where
+        pixel = pixelAt img i j
+        (r, g, b) = convert pixel
 
 -- | Read an image file and calculate the average color.
 avgColorOfFile :: String -> IO (Either String (Int, Int, Int))
 avgColorOfFile path = do
-    dynMaybe <- readImage path
-    case dynMaybe of
-        Left err -> return $ Left err
-        Right dyn -> do
-            let image = convertRGB8 dyn
-                iter  = createImageIter image
-            avg <- runIteratorT (avgColor convertPixel) iter
-            return $ Right avg
+    dyn <- readImage path
+    return $ calcAvgColor . convertRGB8 <$> dyn
+  where
+    calcAvgColor i = avgColor i convertPixel (range i)
+    range i = pixelRange (0, 0) (imageWidth i) (imageHeight i)
+
+pixelRange :: (Int, Int) -> Int -> Int -> [(Int, Int)]
+pixelRange (x, y) w h = (\y x -> (x, y)) <$> [y..y + h - 1] <*> [x..x + w - 1]
 
 convertPixel :: PixelRGB8 -> (Double, Double, Double)
 convertPixel (PixelRGB8 r g b) = (r', g', b')

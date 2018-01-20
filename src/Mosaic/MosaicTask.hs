@@ -19,9 +19,8 @@ import Data.List (foldl')
 import Data.Maybe (catMaybes)
 import Data.Traversable (forM)
 import Data.Vector ((//))
-import Mosaic.AvgColor (avgColor, convertPixel)
+import Mosaic.AvgColor (avgColor, convertPixel, pixelRange)
 import Mosaic.KDTree (bulkInitTree, nearestNeighbor, Dimensional (..), Tree)
-import Mosaic.Iterator (createRangeIter, runIteratorT, ImageIterator)
 import Mosaic.Parser (parseInt, parseSpaces, parseQuotes, runParser)
 
 import qualified Data.Vector as V
@@ -64,7 +63,7 @@ loadFromFile path = do
 processImage :: Tree CalcResult -> Int -> Int -> Image PixelRGB8 -> IO ImageResult
 processImage tree numRows numCols i = do
     q <- atomically newTQueue
-    forM_ (zip regions [0..]) $ \(iter, i) -> async $ processRegion i q iter tree
+    forM_ (zip regions [0..]) $ \(range, n) -> async $ processRegion n q i range tree
     results <- forM regions $ \_ -> atomically $ readTQueue q
     let v = foldl' buildVec (V.replicate (length regions) Nothing) results
     return $ ImageResult w h $ V.toList v
@@ -79,23 +78,23 @@ breakRegions :: Int
              -> Int
              -> Int
              -> Image PixelRGB8
-             -> [ImageIterator PixelRGB8]
+             -> [[(Int, Int)]]
 breakRegions w h iw ih i = go (0, 0) []
   where
     go (x, y) build
         | y + h >= ih = reverse build
         | x + w >= iw = go (0, y + h) build
-        | otherwise   = go (x + w, y) $ newIter (x, y):build
-    newIter p = createRangeIter w h p i
+        | otherwise   = go (x + w, y) $ pixelRange (x, y) w h:build
 
 processRegion :: Int
               -> TQueue (Int, Maybe String)
-              -> ImageIterator PixelRGB8
+              -> Image PixelRGB8
+              -> [(Int, Int)]
               -> Tree CalcResult
               -> IO ()
-processRegion i q iter tree = do
-    avg <- runIteratorT (avgColor convertPixel) iter
-    let avgCalcRes  = CalcResult "" avg
+processRegion i q img range tree = do
+    let avg         = avgColor img convertPixel range
+        avgCalcRes  = CalcResult "" avg
         nearest     = nearestNeighbor avgCalcRes tree
         imageResult = resultFilename <$> nearest
     atomically $ writeTQueue q (i, imageResult)
