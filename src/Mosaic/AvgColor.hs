@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module Mosaic.AvgColor
     ( avgColor
     , avgColorOfFile
@@ -28,7 +29,7 @@ avgColor img convert = calcAvg . foldl' incAvg ((0.0, 0.0, 0.0), 0.0)
         r' = round $ r / num :: Int
         g' = round $ g / num :: Int
         b' = round $ b / num :: Int
-    incAvg ((sumR, sumG, sumB), num) (i, j) =
+    incAvg ((!sumR, !sumG, !sumB), !num) (i, j) =
         ((sumR + r, sumG + g, sumB + b), num + 1)
       where
         pixel = pixelAt img i j
@@ -49,6 +50,6 @@ pixelRange (x, y) w h = (\y x -> (x, y)) <$> [y..y + h - 1] <*> [x..x + w - 1]
 convertPixel :: PixelRGB8 -> (Double, Double, Double)
 convertPixel (PixelRGB8 r g b) = (r', g', b')
   where
-    r' = fromIntegral r :: Double
-    g' = fromIntegral g :: Double
-    b' = fromIntegral b :: Double
+    !r' = fromIntegral r :: Double
+    !g' = fromIntegral g :: Double
+    !b' = fromIntegral b :: Double
