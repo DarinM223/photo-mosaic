@@ -1,8 +1,6 @@
 module Main where
 
-import Mosaic.AvgColorTask (calcInDirectory)
-import Mosaic.HTMLOutput (generateOutput)
-import Mosaic.MosaicTask (calcMosaic)
+import Mosaic (calcInDirectory, calcMosaic, generateOutput)
 import System.Environment (getArgs)
 
 main :: IO ()
