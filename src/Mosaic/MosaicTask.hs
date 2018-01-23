@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Mosaic.MosaicTask
     ( calcMosaic
     , CalcResult (..)
@@ -28,7 +30,7 @@ import Mosaic.AvgColor (avgColor, convertPixel, pixelRange)
 import Mosaic.KDTree
     ( bulkInitTree
     , nearestNeighbor
-    , Dimensional (atDim, dist)
+    , Dimensional (atDim, dist, numDims)
     , Tree
     )
 import Mosaic.Parser (parseInt, parseSpaces, parseQuotes, runParser)
@@ -51,8 +53,14 @@ instance Dimensional CalcResult where
     atDim 1 c = second where (_, second, _) = resultAvgColor c
     atDim 2 c = third where (_, _, third) = resultAvgColor c
 
-    dist (CalcResult _ (x1, y1, z1)) (CalcResult _ (x2, y2, z2)) =
+    dist (CalcResult _ (x1, y1, z1)) other =
         (x2 - x1) ^ 2 + (y2 - y1) ^ 2 + (z2 - z1) ^ 2
+      where
+        x2 = atDim 0 other
+        y2 = atDim 1 other
+        z2 = atDim 2 other
+
+    numDims _ = 3
 
 calcMosaic :: String -> String -> Int -> Int -> IO (Either String ImageResult)
 calcMosaic indexPath imagePath numRows numCols = do
@@ -91,7 +99,7 @@ breakRegions :: Int
              -> [[(Int, Int)]]
 breakRegions w h iw ih i = go (0, 0) []
   where
-    go (x, y) build
+    go (!x, !y) build
         | y + h >= ih = reverse build
         | x + w >= iw = go (0, y + h) build
         | otherwise   = go (x + w, y) $ pixelRange (x, y) w h:build
@@ -104,8 +112,7 @@ processRegion :: Int
               -> IO ()
 processRegion i q img range tree = do
     let avg         = avgColor img convertPixel range
-        avgCalcRes  = CalcResult "" avg
-        nearest     = nearestNeighbor avgCalcRes tree
+        nearest     = nearestNeighbor avg tree
         imageResult = resultFilename <$> nearest
     atomically $ writeTQueue q (i, imageResult)
 
