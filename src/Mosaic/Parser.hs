@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# language GeneralizedNewtypeDeriving #-}
 
 module Mosaic.Parser
     ( Parser

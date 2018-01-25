@@ -1,4 +1,5 @@
-{-# LANGUAGE BangPatterns #-}
+{-# language BangPatterns #-}
+{-# language TypeFamilies #-}
 
 module Mosaic.MosaicTask
     ( calcMosaic
@@ -30,7 +31,7 @@ import Mosaic.AvgColor (avgColor, convertPixel, pixelRange)
 import Mosaic.KDTree
     ( bulkInitTree
     , nearestNeighbor
-    , Dimensional (atDim, dist, numDims)
+    , Dimensional (atDim, dist, numDims, Value)
     , Tree
     )
 import Mosaic.Parser (parseInt, parseSpaces, parseQuotes, runParser)
@@ -49,6 +50,8 @@ data ImageResult = ImageResult
     } deriving (Show, Eq)
 
 instance Dimensional CalcResult where
+    type Value CalcResult = Int
+
     atDim 0 c = first where (first, _, _) = resultAvgColor c
     atDim 1 c = second where (_, second, _) = resultAvgColor c
     atDim 2 c = third where (_, _, third) = resultAvgColor c

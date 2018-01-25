@@ -1,6 +1,8 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE ExplicitForAll #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# language ScopedTypeVariables #-}
+{-# language ExplicitForAll #-}
+{-# language FlexibleInstances #-}
+{-# language TypeFamilies #-}
+{-# language FlexibleContexts #-}
 
 module Mosaic.KDTree
     ( bulkInitTree
@@ -12,15 +14,19 @@ module Mosaic.KDTree
 
 import Data.List (sortBy)
 
-class (Eq d) => Dimensional d where
+class (Eq d, Num (Value d), Ord (Value d)) => Dimensional d where
+    type Value d :: *
+
     -- | Returns the value at the given axis (starting at 0).
-    atDim :: Int -> d -> Int
+    atDim :: Int -> d -> Value d
     -- | Returns the squared distance between two Dimensionals.
-    dist  :: (Dimensional e) => d -> e -> Int
+    dist  :: (Dimensional e, Value d ~ Value e) => d -> e -> Value d
     -- | Returns the number of axises in the Dimensional.
     numDims :: d -> Int
 
 instance Dimensional (Int, Int, Int) where
+    type Value (Int, Int, Int) = Int
+
     atDim 0 (first, _, _) = first
     atDim 1 (_, second, _) = second
     atDim 2 (_, _, third) = third
@@ -68,13 +74,13 @@ insertInTree dim e (Node elem left right)
   where
     nextDim = incDim dim (undefined :: a)
 
-nearestNeighbor :: forall a b. (Dimensional a, Dimensional b)
+nearestNeighbor :: forall a b. (Dimensional a, Dimensional b, Value a ~ Value b)
                 => b
                 -> Tree a
                 -> Maybe a
 nearestNeighbor = nearestNeighborInTree 0
 
-nearestNeighborInTree :: forall a b. (Dimensional a, Dimensional b)
+nearestNeighborInTree :: forall a b. (Dimensional a, Dimensional b, Value a ~ Value b)
                       => Int
                       -> b
                       -> Tree a

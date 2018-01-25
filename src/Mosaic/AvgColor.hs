@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# language BangPatterns #-}
 
 module Mosaic.AvgColor
     ( avgColor
