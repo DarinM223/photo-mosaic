@@ -5,7 +5,8 @@
 {-# language FlexibleContexts #-}
 
 module Mosaic.KDTree
-    ( bulkInitTree
+    ( balanced
+    , bulkInitTree
     , insert
     , nearestNeighbor
     , Dimensional (..)
@@ -59,6 +60,19 @@ bulkInitDim dim l =
     sortedList = sortBy (compareDim dim) l
     compareDim dim a b = atDim dim a `compare` atDim dim b
     midIdx = length l `div` 2
+
+balanced :: (Dimensional a) => Tree a -> Bool
+balanced = fst . go
+  where
+    go Empty = (True, -1)
+    go (Node _ left right)
+        | isBalanced = (True, max leftHeight rightHeight + 1)
+        | otherwise  = (False, -1)
+      where
+        (leftBalanced, leftHeight) = go left
+        (rightBalanced, rightHeight) = go right
+        heightDiff = abs $ leftHeight - rightHeight
+        isBalanced = leftBalanced && rightBalanced && heightDiff <= 1
 
 insert :: (Dimensional a) => a -> Tree a -> Tree a
 insert = insertInTree 0
