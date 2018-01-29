@@ -127,4 +127,4 @@ nearestNeighborInTree dim searchP (Node currP left right)
 
         -- TODO(DarinM223): understand how this works better
         sphereIntersectsPlane closest =
-            (searchPDim - currPDim) ^ 2 <= dist currP closest
+            (searchPDim - currPDim) ^ 2 <= dist searchP closest
