@@ -13,7 +13,7 @@ handleArgs ["mosaic", indexPath, imagePath, htmlPath, numRows, numCols] = do
     eitherRes <- calcMosaic indexPath imagePath rows cols
     case eitherRes of
         Left err -> putStrLn $ "Error: " ++ err
-        Right res -> writeFile htmlPath . generateOutput rows cols $ res
+        Right res -> writeFile htmlPath . generateOutput cols $ res
   where
     rows = read numRows :: Int
     cols = read numCols :: Int

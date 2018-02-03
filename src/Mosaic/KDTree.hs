@@ -31,6 +31,7 @@ instance Dimensional (Int, Int, Int) where
     atDim 0 (first, _, _) = first
     atDim 1 (_, second, _) = second
     atDim 2 (_, _, third) = third
+    atDim _ _ = undefined
 
     dist (x1, y1, z1) other =
         (x2 - x1) ^ 2 + (y2 - y1) ^ 2 + (z2 - z1) ^ 2
@@ -50,8 +51,8 @@ bulkInitTree :: (Dimensional a) => [a] -> Tree a
 bulkInitTree = bulkInitDim 0
 
 bulkInitDim :: forall a. (Dimensional a) => Int -> [a] -> Tree a
-bulkInitDim dim [e] = Node e Empty Empty
-bulkInitDim dim [] = Empty
+bulkInitDim _ [e] = Node e Empty Empty
+bulkInitDim _ [] = Empty
 bulkInitDim dim l =
     Node mid (bulkInitDim nextDim left) (bulkInitDim nextDim right)
   where

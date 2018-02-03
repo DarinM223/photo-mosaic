@@ -55,6 +55,7 @@ instance Dimensional CalcResult where
     atDim 0 c = first where (first, _, _) = resultAvgColor c
     atDim 1 c = second where (_, second, _) = resultAvgColor c
     atDim 2 c = third where (_, _, third) = resultAvgColor c
+    atDim _ _ = undefined
 
     dist (CalcResult _ (x1, y1, z1)) other =
         (x2 - x1) ^ 2 + (y2 - y1) ^ 2 + (z2 - z1) ^ 2
@@ -91,16 +92,15 @@ processImage tree numRows numCols i = do
   where
     w = imageWidth i `div` numCols
     h = imageHeight i `div` numRows
-    regions = breakRegions w h (imageWidth i) (imageHeight i) i
+    regions = breakRegions w h (imageWidth i) (imageHeight i)
     buildVec v (i, value) = v // [(i, value)]
 
 breakRegions :: Int
              -> Int
              -> Int
              -> Int
-             -> Image PixelRGB8
              -> [[(Int, Int)]]
-breakRegions w h iw ih i = go (0, 0) []
+breakRegions w h iw ih = go (0, 0) []
   where
     go (!x, !y) build
         | y + h >= ih = reverse build
@@ -113,16 +113,17 @@ processRegion :: Int
               -> [(Int, Int)]
               -> Tree CalcResult
               -> IO ()
-processRegion i q img range tree = do
-    let avg         = avgColor img convertPixel range
-        nearest     = nearestNeighbor avg tree
-        imageResult = resultFilename <$> nearest
+processRegion i q img range tree =
     atomically $ writeTQueue q (i, imageResult)
+  where
+    avg = avgColor img convertPixel range
+    nearest = nearestNeighbor avg tree
+    imageResult = resultFilename <$> nearest
 
 parseLine :: String -> Maybe CalcResult
 parseLine = convertToMaybe . runIdentity . runParser go
   where
-    convertToMaybe (Left err) = Nothing
+    convertToMaybe (Left _) = Nothing
     convertToMaybe (Right (result, _)) = Just result
     go = do
         parseSpaces

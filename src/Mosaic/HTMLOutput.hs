@@ -14,8 +14,8 @@ htmlImg Nothing w h =
 htmlBr :: String
 htmlBr = "<br>"
 
-generateOutput :: Int -> Int -> ImageResult -> String
-generateOutput numRows numCols (ImageResult w h filenames) =
+generateOutput :: Int -> ImageResult -> String
+generateOutput numCols (ImageResult w h filenames) =
     go 0 "" filenames
   where
     go _ build [] = build
