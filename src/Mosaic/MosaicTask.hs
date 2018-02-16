@@ -71,11 +71,7 @@ calcMosaic indexPath imagePath numRows numCols = do
     avgColors <- loadFromFile indexPath
     dynMaybe <- readImage imagePath
     let tree = bulkInitTree avgColors
-    case dynMaybe of
-        Left err -> return $ Left err
-        Right dyn -> do
-            results <- processImage tree numRows numCols $ convertRGB8 dyn
-            return $ Right results
+    mapM (processImage tree numRows numCols . convertRGB8) dynMaybe
 
 loadFromFile :: String -> IO [CalcResult]
 loadFromFile path = do

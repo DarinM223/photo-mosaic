@@ -31,14 +31,12 @@ calcInDirectory path indexPath = do
     let imageFiles = fmap appendPath . filter keepImgs $ files
 
     q <- atomically newTQueue
-    forM_ imageFiles $ \f -> async $ handleAvg q f
+    mapM_ (async . handleAvg q) imageFiles
     forM_ imageFiles $ \_ -> do
         result <- atomically $ readTQueue q
-        case result of
-            Just result -> do
-                putStrLn $ show (resultFilename result) ++ " finished"
-                writeResultToFile result indexPath
-            Nothing -> return ()
+        forM_ result $ \result -> do
+            putStrLn $ show (resultFilename result) ++ " finished"
+            writeResultToFile result indexPath
   where
     appendPath f = path ++ "/" ++ f
     keepImgs = checkFilename . splitOn "."

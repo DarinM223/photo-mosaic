@@ -39,6 +39,7 @@ executables:
     ghc-options:
     - -O2
     - -W
+    - -fshow-hole-constraints
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
