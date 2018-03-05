@@ -3,9 +3,8 @@
 
 import Test.Tasty
 import Test.Tasty.QuickCheck as QC
-import Test.Tasty.HUnit
 
-import Data.List (sort, sortBy)
+import Data.List (sortBy)
 import Mosaic.KDTree (balanced, bulkInitTree, nearestNeighbor)
 import Debug.Trace
 

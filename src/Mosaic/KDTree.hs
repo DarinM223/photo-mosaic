@@ -1,9 +1,3 @@
-{-# language ScopedTypeVariables #-}
-{-# language ExplicitForAll #-}
-{-# language FlexibleInstances #-}
-{-# language TypeFamilies #-}
-{-# language FlexibleContexts #-}
-
 module Mosaic.KDTree
     ( balanced
     , bulkInitTree
@@ -57,12 +51,14 @@ bulkInitDim dim l =
     Node mid (bulkInitDim nextDim left) (bulkInitDim nextDim right)
   where
     nextDim = incDim dim (undefined :: a)
-    (left, mid:right) = splitAt midIdx sortedList
+    (left, mid, right) = case splitAt midIdx sortedList of
+        (left, mid:right) -> (left, mid, right)
+        _                 -> error "Empty list when splitting in half"
     sortedList = sortBy (compareDim dim) l
     compareDim dim a b = atDim dim a `compare` atDim dim b
     midIdx = length l `div` 2
 
-balanced :: (Dimensional a) => Tree a -> Bool
+balanced :: Tree a -> Bool
 balanced = fst . go
   where
     go Empty = (True, -1)

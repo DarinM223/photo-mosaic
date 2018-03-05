@@ -1,6 +1,3 @@
-{-# language BangPatterns #-}
-{-# language TypeFamilies #-}
-
 module Mosaic.MosaicTask
     ( calcMosaic
     , CalcResult (..)

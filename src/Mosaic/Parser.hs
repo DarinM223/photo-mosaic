@@ -1,5 +1,3 @@
-{-# language GeneralizedNewtypeDeriving #-}
-
 module Mosaic.Parser
     ( Parser
     , ParserError
@@ -35,7 +33,7 @@ newtype Parser m a = Parser
     { fromParser :: StateT String (ExceptT ParserError m) a
     } deriving (Functor, Applicative, Monad, MonadError ParserError, MonadState String)
 
-runParser :: (Monad m) => Parser m a -> String -> m (Either ParserError (a, String))
+runParser :: Parser m a -> String -> m (Either ParserError (a, String))
 runParser p = runExceptT . runStateT (fromParser p)
 
 parseChar :: (Monad m) => Char -> Parser m ()
