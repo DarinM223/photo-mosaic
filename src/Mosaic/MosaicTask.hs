@@ -10,19 +10,10 @@ import Codec.Picture
     , Image (imageWidth, imageHeight)
     , PixelRGB8
     )
-import Control.Concurrent.Async (async)
-import Control.Concurrent.STM
-    ( atomically
-    , newTQueue
-    , readTQueue
-    , writeTQueue
-    , TQueue
-    )
-import Control.Monad (forM_)
 import Control.Monad.Identity (runIdentity)
+import Control.Monad.Par
 import Data.List (foldl')
 import Data.Maybe (catMaybes)
-import Data.Traversable (forM)
 import Data.Vector ((//))
 import Mosaic.AvgColor (avgColor, convertPixel, pixelRange)
 import Mosaic.KDTree
@@ -68,25 +59,25 @@ calcMosaic indexPath imagePath numRows numCols = do
     avgColors <- loadFromFile indexPath
     dynMaybe <- readImage imagePath
     let tree = bulkInitTree avgColors
-    mapM (processImage tree numRows numCols . convertRGB8) dynMaybe
+    mapM ((return . processImage tree numRows numCols) . convertRGB8) dynMaybe
 
 loadFromFile :: String -> IO [CalcResult]
 loadFromFile path = do
     content <- readFile path
     return $ catMaybes $ parseLine <$> lines content
 
-processImage :: Tree CalcResult -> Int -> Int -> Image PixelRGB8 -> IO ImageResult
-processImage tree numRows numCols i = do
-    q <- atomically newTQueue
-    forM_ (zip regions [0..]) $ \(range, n) -> async $ processRegion n q i range tree
-    results <- forM regions $ \_ -> atomically $ readTQueue q
-    let v = foldl' buildVec (V.replicate (length regions) Nothing) results
-    return $ ImageResult w h $ V.toList v
+processImage :: Tree CalcResult -> Int -> Int -> Image PixelRGB8 -> ImageResult
+processImage tree numRows numCols i = ImageResult w h $ V.toList v
   where
     w = imageWidth i `div` numCols
     h = imageHeight i `div` numRows
     regions = breakRegions w h (imageWidth i) (imageHeight i)
+
+    process (range, n) = processRegion n i range tree
+    results = runPar $ parMap process (zip regions [0..])
+
     buildVec v (i, value) = v // [(i, value)]
+    v = foldl' buildVec (V.replicate (length regions) Nothing) results
 
 breakRegions :: Int
              -> Int
@@ -101,13 +92,11 @@ breakRegions w h iw ih = go (0, 0) []
         | otherwise   = go (x + w, y) $ pixelRange (x, y) w h:build
 
 processRegion :: Int
-              -> TQueue (Int, Maybe String)
               -> Image PixelRGB8
               -> [(Int, Int)]
               -> Tree CalcResult
-              -> IO ()
-processRegion i q img range tree =
-    atomically $ writeTQueue q (i, imageResult)
+              -> (Int, Maybe String)
+processRegion i img range tree = (i, imageResult)
   where
     avg = avgColor img convertPixel range
     nearest = nearestNeighbor avg tree
