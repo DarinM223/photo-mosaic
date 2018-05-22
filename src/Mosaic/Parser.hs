@@ -37,7 +37,7 @@ runParser :: Parser m a -> String -> m (Either ParserError (a, String))
 runParser p = runExceptT . runStateT (fromParser p)
 
 parseChar :: (Monad m) => Char -> Parser m ()
-parseChar c = get >>= \s -> case s of
+parseChar c = get >>= \case
     (o:rest) | o == c -> put rest
     _                 -> throwError $ CharError c
 
@@ -45,7 +45,7 @@ parseUpTo :: (Monad m) => (Char -> Bool) -> Parser m String
 parseUpTo = go ""
   where
     go :: (Monad m) => String -> (Char -> Bool) -> Parser m String
-    go build p = get >>= \s -> case s of
+    go build p = get >>= \case
         (o:rest) | p o -> do
             put rest
             return $ reverse build
@@ -55,7 +55,7 @@ parseUpTo = go ""
         [] -> return $ reverse build
 
 parseSpaces :: (Monad m) => Parser m ()
-parseSpaces = get >>= \s -> case s of
+parseSpaces = get >>= \case
     (o:rest) | o == ' ' || o == '\t' || o == '\n' -> do
         put rest
         parseSpaces
@@ -69,6 +69,4 @@ parseInt = do
         _      -> throwError $ ParseIntError s
 
 parseQuotes :: (Monad m) => Char -> Parser m String
-parseQuotes c = do
-    parseChar c
-    parseUpTo (== c)
+parseQuotes c = parseChar c >> parseUpTo (== c)

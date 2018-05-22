@@ -9,10 +9,9 @@ main = getArgs >>= handleArgs
 handleArgs :: [String] -> IO ()
 handleArgs ["avg", dirPath, indexPath] =
     calcInDirectory dirPath indexPath
-handleArgs ["mosaic", indexPath, imagePath, htmlPath, numRows, numCols] = do
-    eitherRes <- calcMosaic indexPath imagePath rows cols
-    case eitherRes of
-        Left err -> putStrLn $ "Error: " ++ err
+handleArgs ["mosaic", indexPath, imagePath, htmlPath, numRows, numCols] =
+    calcMosaic indexPath imagePath rows cols >>= \case
+        Left err  -> putStrLn $ "Error: " ++ err
         Right res -> writeFile htmlPath . generateOutput cols $ res
   where
     rows = read numRows :: Int

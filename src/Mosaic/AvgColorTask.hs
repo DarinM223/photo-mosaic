@@ -44,11 +44,9 @@ calcInDirectory path indexPath = do
     hasImageFilename words isImage ext = isImage || ext `elem` words
 
 handleAvg :: TQueue (Maybe CalcResult) -> String -> IO ()
-handleAvg q filename = do
-    avgColor <- avgColorOfFile filename
-    case avgColor of
-        Right color -> atomically $ writeTQueue q $ Just $ CalcResult filename color
-        Left _      -> atomically $ writeTQueue q Nothing
+handleAvg q filename = avgColorOfFile filename >>= \case
+    Right color -> atomically $ writeTQueue q $ Just $ CalcResult filename color
+    Left _      -> atomically $ writeTQueue q Nothing
 
 writeResultToFile :: CalcResult -> String -> IO ()
 writeResultToFile (CalcResult filename (r, g, b)) indexPath = appendFile indexPath s
