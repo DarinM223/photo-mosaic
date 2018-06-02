@@ -8,6 +8,7 @@ module Mosaic.KDTree
     ) where
 
 import Data.List (sortBy)
+import Data.Proxy
 
 class (Eq d, Num (Value d), Ord (Value d)) => Dimensional d where
     type Value d :: *
@@ -17,7 +18,7 @@ class (Eq d, Num (Value d), Ord (Value d)) => Dimensional d where
     -- | Returns the squared distance between two Dimensionals.
     dist  :: (Dimensional e, Value d ~ Value e) => d -> e -> Value d
     -- | Returns the number of axises in the Dimensional.
-    numDims :: d -> Int
+    numDims :: Proxy d -> Int
 
 instance Dimensional (Int, Int, Int) where
     type Value (Int, Int, Int) = Int
@@ -36,8 +37,8 @@ instance Dimensional (Int, Int, Int) where
 
     numDims _ = 3
 
-incDim :: forall d. (Dimensional d) => Int -> d -> Int
-incDim dim d = (dim + 1) `rem` numDims d
+incDim :: forall d. (Dimensional d) => Proxy d -> Int -> Int
+incDim p dim = (dim + 1) `rem` numDims p
 
 data Tree a = Empty | Node a (Tree a) (Tree a) deriving (Show, Eq)
 
@@ -50,7 +51,7 @@ bulkInitDim _ [] = Empty
 bulkInitDim dim l =
     Node mid (bulkInitDim nextDim left) (bulkInitDim nextDim right)
   where
-    nextDim = incDim dim (undefined :: a)
+    nextDim = incDim (Proxy :: Proxy a) dim
     (left, mid, right) = case splitAt midIdx sortedList of
         (left, mid:right) -> (left, mid, right)
         _                 -> error "Empty list when splitting in half"
@@ -83,7 +84,7 @@ insertInTree dim e (Node elem left right)
     | otherwise =
         Node elem left (insertInTree nextDim e right)
   where
-    nextDim = incDim dim (undefined :: a)
+    nextDim = incDim (Proxy :: Proxy a) dim
 
 nearestNeighbor :: forall a b. (Dimensional a, Dimensional b, Value a ~ Value b)
                 => b
@@ -112,7 +113,7 @@ nearestNeighborInTree dim searchP (Node currP left right)
         closestT1 = bestPoint currP . searchTree $ t1
 
         -- Searches and returns the nearest neighbor.
-        nextDim = incDim dim (undefined :: a)
+        nextDim = incDim (Proxy :: Proxy a) dim
         searchTree = nearestNeighborInTree nextDim searchP
 
         -- Compares the nearest neighbor result to another point
