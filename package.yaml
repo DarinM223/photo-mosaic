@@ -96,6 +96,7 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - photo-mosaic
+    - hedgehog
     - tasty
+    - tasty-hedgehog
     - tasty-hunit
-    - tasty-quickcheck
